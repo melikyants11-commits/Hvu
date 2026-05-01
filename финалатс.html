@@ -1,0 +1,584 @@
+<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"><title>🦕 Dino Isle - THE APEX</title><script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script><script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script><script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/SkeletonUtils.js"></script><script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;} html,body{width:100vw;height:100vh;overflow:hidden;background:#050505;font-family:'Arial',sans-serif;touch-action:none;user-select:none;} #canvas{display:block;width:100%;height:100%;position:absolute;top:0;left:0;z-index:1;} #underwaterOverlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,60,150,0.5);z-index:400;pointer-events:none;backdrop-filter:blur(2px);} #rotateScreen{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#050505;color:#fff;z-index:9999;flex-direction:column;justify-content:center;align-items:center;text-align:center;} @media(orientation:portrait){#rotateScreen{display:flex;}} .screen{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;z-index:1000;} .bg-dark{background:radial-gradient(circle,rgba(20,20,20,0.9) 0%,rgba(5,5,5,1) 100%);flex-direction:column;justify-content:center;align-items:center;} h1{font-size:2.5rem;color:#fff;text-shadow:0 0 10px rgba(255,255,255,0.3);margin-bottom:20px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;} input[type="text"]{width:200px;height:38px;font-size:14px;text-align:center;border:1px solid rgba(255,255,255,0.2);background:rgba(10,10,10,0.8);color:#fff;margin-bottom:10px;outline:none;border-radius:2px;} button.btn{width:160px;height:38px;font-size:12px;font-weight:bold;border:1px solid rgba(255,255,255,0.2);background:rgba(20,20,20,0.8);color:#aaa;cursor:pointer;text-transform:uppercase;letter-spacing:1px;transition:0.2s;border-radius:2px;margin:0 auto;display:block;} button.btn:hover{background:rgba(40,40,40,0.9);color:#fff;border-color:#fff;box-shadow:0 0 15px rgba(255,255,255,0.2);} button.btn:active{transform:scale(0.98);} button.btn:disabled{background:#111;color:#555;cursor:not-allowed;border-color:#333;} #screen-mainmenu{background:radial-gradient(circle,rgba(0,0,0,0.2) 0%,rgba(0,0,0,0.6) 100%);display:none;justify-content:space-between;align-items:center;padding:0 50px;} .menu-side{display:flex;flex-direction:column;gap:10px;background:rgba(10,10,10,0.85);padding:15px;border:1px solid rgba(255,255,255,0.1);border-radius:2px;backdrop-filter:blur(5px);width:200px;box-shadow:0 0 20px rgba(0,0,0,0.8);} .menu-side h2{color:#ddd;font-size:1rem;text-align:center;margin-bottom:5px;font-weight:normal;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:5px;} #coinsDisplay{position:absolute;top:20px;right:30px;font-size:16px;color:#ddd;background:rgba(10,10,10,0.8);padding:8px 15px;border:1px solid rgba(255,255,255,0.1);border-radius:2px;display:flex;align-items:center;gap:10px;} #coinsDisplay span{color:gold;font-weight:bold;} .icon-btn{background:#222;border:1px solid gold;border-radius:50%;color:#fff;width:24px;height:24px;font-size:12px;cursor:pointer;display:flex;justify-content:center;align-items:center;box-shadow:0 0 5px rgba(255,215,0,0.5);} #screen-charselect{background:radial-gradient(circle,rgba(0,0,0,0.1) 0%,rgba(0,0,0,0.7) 100%);display:none;justify-content:flex-end;align-items:center;padding:0 40px;position:relative;} .info-box{background:linear-gradient(135deg,rgba(15,15,15,0.9),rgba(5,5,5,0.95));padding:20px;border:1px solid rgba(0,255,136,0.2);border-radius:6px;width:250px;text-align:left;position:relative;z-index:10;} .dino-select-header{margin-bottom:12px;border-bottom:1px solid rgba(0,255,136,0.3);padding-bottom:8px;text-align:center;} .dino-select-header h2{color:#00ff88;font-size:1.1rem;margin:0;} .info-stats{color:#ccc;font-size:12px;margin-bottom:15px;line-height:1.8;font-family:monospace;} .info-stats span{color:#fff;display:inline-block;width:75px;} .info-box .btn{width:100%;height:34px;font-size:11px;margin-bottom:8px;} .side-btn{position:absolute;top:50%;transform:translateY(-50%);background:rgba(10,10,10,0.7);border:2px solid #00ff88;color:#00ff88;width:55px;height:55px;font-size:24px;border-radius:50%;cursor:pointer;display:flex;justify-content:center;align-items:center;transition:0.2s;box-shadow:0 0 15px rgba(0,255,136,0.2);z-index:5;} .side-btn:hover{background:rgba(0,255,136,0.2);transform:translateY(-50%) scale(1.1);box-shadow:0 0 25px rgba(0,255,136,0.5);} .side-btn:active{transform:translateY(-50%) scale(0.9);} .side-btn.left{left:5%;} .side-btn.right{right:330px;} #screen-servers{background:rgba(5,5,5,0.9);display:none;flex-direction:column;justify-content:center;align-items:center;} #serverList{background:rgba(15,15,15,0.8);padding:15px;border:1px solid rgba(255,255,255,0.2);width:80%;max-width:400px;max-height:70vh;overflow-y:auto;} .server-item{display:flex;justify-content:space-between;padding:15px;margin:5px 0;background:rgba(30,30,30,0.6);cursor:pointer;color:#ccc;font-size:14px;text-transform:uppercase;} .server-item:hover{background:rgba(50,50,50,0.8);color:#fff;border-color:rgba(255,255,255,0.3);} .modal-screen{display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.85);z-index:2000;flex-direction:column;justify-content:center;align-items:center;pointer-events:all;} .settings-box{background:rgba(15,15,15,0.95);padding:20px;border:1px solid rgba(255,255,255,0.2);border-radius:8px;text-align:center;display:flex;flex-direction:column;gap:8px;width:280px;} .settings-box h2{font-size:1.1rem;color:#fff;margin-bottom:5px;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:5px;} .gfx-row{display:flex;flex-direction:column;align-items:flex-start;margin-bottom:5px;color:#fff;font-size:10px;font-weight:bold;} .gfx-row input,.gfx-row select{width:100%;margin-top:4px;padding:4px;background:#111;color:#fff;border:1px solid rgba(255,255,255,0.2);font-size:11px;} .quest-item{background:rgba(30,30,30,0.5);padding:15px;border-left:3px solid gold;text-align:left;margin-bottom:10px;} .quest-title{color:#fff;font-size:14px;font-weight:bold;} .quest-desc,.quest-progress{color:#aaa;font-size:12px;} .quest-reward{color:gold;font-size:12px;font-weight:bold;} #topHpBar{position:absolute;top:20px;left:50%;transform:translateX(-50%);width:250px;height:16px;background:rgba(0,0,0,0.6);border:2px solid rgba(255,255,255,0.2);border-radius:4px;display:none;z-index:500;} #topHpFill{width:100%;height:100%;background:#ff4757;transition:width 0.2s linear;} #topGrowthBar{position:absolute;top:42px;left:50%;transform:translateX(-50%);width:200px;height:8px;background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.2);border-radius:4px;display:none;z-index:500;} #topGrowthFill{width:0%;height:100%;background:#1e90ff;transition:width 0.2s linear;} #hud{position:fixed;z-index:500;top:10px;left:10px;background:rgba(10,10,10,0.7);padding:8px 12px;border:1px solid rgba(255,255,255,0.1);color:#aaa;font-size:10px;border-radius:2px;display:none;} #hud span{color:#fff;} .ping-text{color:#00ff88!important;font-weight:bold;} #settingsBtn,#playersBtn{position:fixed;z-index:500;top:10px;width:35px;height:35px;background:rgba(10,10,10,0.7);border:1px solid rgba(255,255,255,0.2);color:#fff;font-size:18px;display:none;justify-content:center;align-items:center;cursor:pointer;border-radius:2px;} #settingsBtn{right:10px;} #playersBtn{right:55px;font-size:16px;} #chatBox{position:fixed;z-index:500;top:50px;right:10px;width:180px;height:90px;background:rgba(10,10,10,0.6);border:1px solid rgba(255,255,255,0.1);pointer-events:all;display:none;} #chatMessages{position:absolute;top:4px;left:4px;right:4px;bottom:25px;overflow-y:auto;color:#ccc;font-size:9px;display:flex;flex-direction:column;gap:3px;} #chatMessages span{color:#fff;font-weight:bold;} #chatInputArea{position:absolute;bottom:4px;left:4px;right:4px;height:18px;display:flex;gap:4px;} #chatInputArea input{width:100%;height:100%;font-size:10px;border:1px solid rgba(255,255,255,0.2);padding:0 4px;background:rgba(0,0,0,0.5);color:#fff;} #chatSendBtn{width:30px;height:100%;background:rgba(50,50,50,0.8);color:white;border:1px solid rgba(255,255,255,0.2);} #joystick{position:fixed;z-index:500;bottom:20px;left:30px;width:100px;height:100px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:50%;display:none;} #joystick-knob{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:40px;height:40px;background:rgba(255,255,255,0.3);border-radius:50%;} #bottomRightUI{position:fixed;z-index:500;bottom:15px;right:15px;display:none;flex-direction:column;align-items:flex-end;gap:10px;} #actionBtns{display:flex;gap:8px;} .act-btn{width:42px;height:42px;border-radius:50%;font-size:8px;font-weight:bold;pointer-events:all;display:flex;justify-content:center;align-items:center;border:1px solid rgba(255,255,255,0.2);background:rgba(10,10,10,0.6);color:#aaa;} #biteBtn{background:rgba(255,71,87,0.4);border-color:rgba(255,71,87,0.8);color:#fff;} #roarBtn{background:rgba(255,165,0,0.4);border-color:rgba(255,165,0,0.8);color:#fff;} #restBtn{background:rgba(50,150,255,0.4);border-color:rgba(50,150,255,0.8);color:#fff;} #statsContainer{display:flex;align-items:center;gap:10px;} .food-icon{width:80px;height:80px;position:relative;margin-right:-12px;} .food-bg{position:absolute;width:100%;height:100%;background:rgba(0,0,0,0.6);-webkit-mask:url('eat.png') center/contain no-repeat;} .food-fill-wrapper{position:absolute;bottom:0;width:100%;height:100%;overflow:hidden;} .food-fill{position:absolute;bottom:0;width:100%;height:80px;background:#ff4757;-webkit-mask:url('eat.png') center/contain no-repeat;} .stat-icon{width:45px;height:45px;position:relative;} .paw-bg{position:absolute;width:100%;height:100%;background:rgba(0,0,0,0.6);-webkit-mask:url('stamina.png') center/contain no-repeat;} .paw-fill-wrapper{position:absolute;bottom:0;width:100%;height:100%;overflow:hidden;} .paw-fill{position:absolute;bottom:0;width:100%;height:45px;background:#ffaa00;-webkit-mask:url('stamina.png') center/contain no-repeat;} .water-bg{position:absolute;width:100%;height:100%;background:rgba(0,0,0,0.6);-webkit-mask:url('drink.png') center/contain no-repeat;} .water-fill-wrapper{position:absolute;bottom:0;width:100%;height:100%;overflow:hidden;} .water-fill{position:absolute;bottom:0;width:100%;height:45px;background:#1e90ff;-webkit-mask:url('drink.png') center/contain no-repeat;} #interactBtn{position:fixed;z-index:1000;bottom:80px;left:50%;transform:translateX(-50%);width:55px;height:55px;background:rgba(10,10,10,0.9);border:2px solid #fff;border-radius:50%;color:#fff;font-size:20px;pointer-events:all;justify-content:center;align-items:center;display:none;} #friendReqUI{position:fixed;z-index:1500;bottom:40px;left:140px;background:rgba(15,15,15,0.9);border:1px solid #00ff88;padding:10px;border-radius:4px;display:none;flex-direction:column;gap:8px;width:180px;pointer-events:all;} .fr-text{color:#fff;font-size:11px;text-align:center;} .fr-btns{display:flex;gap:5px;} .fr-btn{flex:1;padding:6px;font-size:10px;background:#222;color:#fff;border:1px solid #444;cursor:pointer;} .fr-btn.yes{border-color:#00ff88;color:#00ff88;} .fr-btn.no{border-color:#ff4757;color:#ff4757;} .plist-item{background:rgba(30,30,30,0.5);padding:10px;border-left:3px solid #00ff88;margin-bottom:5px;display:flex;flex-direction:column;gap:5px;} .plist-name{color:#fff;font-size:14px;} .plist-btn{background:#111;color:#00ff88;border:1px solid #00ff88;font-size:10px;padding:5px;}
+    </style>
+</head>
+<body>
+    <div id="rotateScreen"><h2>📱 ПОВЕРНИ ТЕЛЕФОН</h2></div><div id="underwaterOverlay"></div><div id="crosshair" style="display:none;"></div>
+    <canvas id="canvas"></canvas>
+
+    <div id="screen-ban" class="screen bg-dark" style="display:none;z-index:9999;">
+        <h1 style="color:#ff4757;">ВЫ ЗАБАНЕНЫ</h1>
+        <p style="color:#ccc;font-size:14px;margin-bottom:20px;">Ваш аккаунт заблокирован.</p>
+        <div style="background:rgba(0,0,0,0.5);padding:15px;border:1px solid #ff4757;border-radius:4px;margin-bottom:20px;text-align:center;">
+            <span style="color:#888;font-size:10px;">БАН ИСТЕКАЕТ:</span><br><b id="banEndDate" style="color:#fff;font-size:16px;">...</b>
+        </div>
+        <button class="btn" style="border-color:#ff4757;color:#ff4757;" onclick="location.reload()">ОБНОВИТЬ ИГРУ</button>
+    </div>
+
+    <div id="screen-login" class="screen bg-dark"><h1>THE ISLE</h1><input type="text" id="inputName" placeholder="ИМЯ ИГРОКА" maxlength="12"><button id="loadBtn" class="btn" disabled>ЗАГРУЗКА 3D... 0/6</button></div>
+
+    <div id="screen-mainmenu" class="screen">
+        <div id="coinsDisplay">Монеты: <span id="coinCount">0</span> <button class="icon-btn" onclick="openModal('donateMenu')">💰</button></div>
+        <div class="menu-side" style="margin-right:auto;"><h2>ВЫЖИВАНИЕ</h2><button class="btn" onclick="openQuests()">ЗАДАНИЯ</button><button class="btn" onclick="openFriendsMenu()">ДРУЗЬЯ</button><button class="btn" style="border-color:#1e90ff;color:#1e90ff;" onclick="openModal('promoMenu')">ПРОМОКОДЫ</button></div>
+        <div class="menu-side" style="margin-left:auto;"><h2>ИГРОК: <span id="menuPlayerName" style="color:#fff;"></span></h2><button class="btn" onclick="playGame()" style="border-color:#fff;color:#fff;">ИГРАТЬ</button><button class="btn" onclick="changeName()">СМЕНИТЬ ИМЯ</button></div>
+    </div>
+
+    <div id="screen-charselect" class="screen">
+        <button class="side-btn left" onclick="prevDino()">◀</button><button class="side-btn right" onclick="nextDino()">▶</button>
+        <div class="info-box"><div class="dino-select-header"><h2 id="selectDinoName">ВЕЛОЦИРАПТОР</h2></div><div class="info-stats"><span style="color:#ff4757;">❤️ HP:</span> <span id="statHp">50</span><br><span style="color:#ffaa00;">⚔️ DAMAGE:</span> <span id="statDmg">10</span><br><span style="color:#1e90ff;">💨 SPRINT:</span> <span id="statSpd">8</span><br><span style="color:#00ff88;">🌱 GROWTH:</span> <b id="selectGrowthText">0%</b></div><button id="selectActionBtn" class="btn" style="border-color:#00ff88;color:#00ff88;" onclick="handleSelectAction()">ПРОДОЛЖИТЬ</button><button class="btn" style="border-color:rgba(255,255,255,0.2);color:#aaa;" onclick="backToMenuFromSelect()">НАЗАД</button></div>
+    </div>
+
+    <div id="screen-servers" class="screen"><h1 style="font-size:20px;">ВЫБОР СЕРВЕРА</h1><div id="serverList"><div class="server-item" onclick="joinServer(1)"><span>EU Official 1</span><span id="s1-count">0/20</span></div><div class="server-item" onclick="joinServer(2)"><span>EU Official 2</span><span id="s2-count">0/20</span></div><div class="server-item" onclick="joinServer(3)"><span>Deathmatch 3</span><span id="s3-count">0/20</span></div><div class="server-item" onclick="joinServer(4)"><span>Hardcore 4</span><span id="s4-count">0/20</span></div><div class="server-item" onclick="joinServer(5)"><span>RU Server 5</span><span id="s5-count">0/20</span></div><div class="server-item" onclick="joinServer(6)"><span>RU Server 6</span><span id="s6-count">0/20</span></div></div><button class="btn" style="margin-top:20px;width:150px;" onclick="backToMenuFromServers()">НАЗАД</button></div>
+
+    <div id="donateMenu" class="modal-screen"><div class="settings-box" style="width:320px;"><h2 style="color:gold;font-size:16px;">КУПИТЬ ПРОМОКОД</h2><p style="font-size:11px;color:#ccc;margin-bottom:10px;text-align:left;">Свяжитесь с менеджером <b style="color:#1e90ff;">@Drds_original</b> в Телеграме.</p><div style="background:rgba(0,0,0,0.5);padding:10px;border:1px solid #444;border-radius:4px;margin-bottom:10px;"><span style="font-size:10px;color:#888;">ПЕРЕВОД НА КАРТУ:</span><br><span style="font-size:15px;color:#00ff88;font-weight:bold;letter-spacing:2px;">2200 1513 2294 5812</span><br><span style="font-size:11px;color:#fff;">Альфа Банк</span></div><button class="btn" onclick="closeModal('donateMenu')">НАЗАД</button></div></div>
+    <div id="promoMenu" class="modal-screen"><div class="settings-box" style="width:320px;"><h2>ВВЕСТИ ПРОМОКОД</h2><input type="text" id="promoInput" placeholder="Введите код" style="width:100%;margin-top:10px;"><button class="btn" style="border-color:#1e90ff;color:#1e90ff;" onclick="claimPromo()">ИСПОЛЬЗОВАТЬ</button><button class="btn" onclick="closeModal('promoMenu')">ЗАКРЫТЬ</button></div></div>
+    <div id="questsMenu" class="modal-screen"><div class="settings-box" style="width:350px;"><h2>ЗАДАНИЯ</h2><div class="quest-item"><div class="quest-title">ОХОТНИК</div><div class="quest-desc">Убить 4 динозавров</div><div class="quest-progress" id="questProgress">Прогресс: 0/4 (0%)</div><div class="quest-reward">Награда: 200 🪙</div><button id="claimBtn" class="btn" style="width:100%;margin-top:10px;display:none;background:#00ff88;color:#000;" onclick="claimReward()">ЗАБРАТЬ 200 🪙</button></div><button class="btn" onclick="closeModal('questsMenu')">ЗАКРЫТЬ</button></div></div>
+    <div id="friendsMenu" class="modal-screen"><div class="settings-box" style="width:350px;"><h2>МОИ ДРУЗЬЯ (<span id="friendCountText">0/5</span>)</h2><div id="friendsListContainer" style="max-height:200px;overflow-y:auto;margin-bottom:10px;text-align:left;color:#ccc;font-size:14px;"></div><button class="btn" onclick="closeModal('friendsMenu')">ЗАКРЫТЬ</button></div></div>
+    <div id="playersMenu" class="modal-screen"><div class="settings-box" style="width:350px;"><h2>ИГРОКИ НА СЕРВЕРЕ</h2><div id="playersListContainer" style="max-height:250px;overflow-y:auto;margin-bottom:10px;"></div><button class="btn" onclick="closeModal('playersMenu')">ЗАКРЫТЬ</button></div></div>
+    <div id="settingsMenu" class="modal-screen"><div class="settings-box"><h2>НАСТРОЙКИ</h2><div class="gfx-row"><label>РАЗРЕШЕНИЕ 3D: <span id="resLabel">45%</span></label><input type="range" id="resSlider" min="0" max="100" value="45"></div><div class="gfx-row"><label>ПЛОТНОСТЬ ТРАВЫ:</label><select id="grassSelect"><option value="high">ВЫСОКАЯ</option><option value="medium">СРЕДНЯЯ</option><option value="none">БЕЗ ТРАВЫ</option></select></div><div class="gfx-row"><label>ТЕНИ:</label><select id="shadowSelect"><option value="on">ВКЛЮЧЕНЫ</option><option value="off">ОТКЛЮЧЕНЫ</option></select></div><button class="btn" onclick="toggleFullscreen()">ПОЛНЫЙ ЭКРАН</button><button class="btn" onclick="closeModal('settingsMenu')">ПРОДОЛЖИТЬ</button><button class="btn" onclick="leaveGame()" style="color:#ff4757;border-color:#ff4757;">ВЫЙТИ В МЕНЮ</button></div></div>
+    
+    <div id="topHpBar"><div id="topHpFill"></div></div><div id="topGrowthBar"><div id="topGrowthFill"></div></div>
+    <div id="hud"><div>ID: <span id="hudName"></span></div><div>SERVER: <span id="hudServer">1</span></div><div>PLAYERS: <span id="hudOnline">1</span></div><div>PING: <span id="hudPing" class="ping-text">...</span></div></div>
+    <div id="chatBox"><div id="chatMessages"></div><div id="chatInputArea"><input type="text" id="chatInput" placeholder="Чат..." maxlength="40"><button id="chatSendBtn" onclick="sendChat()">></button></div></div>
+    <div id="settingsBtn" onclick="openModal('settingsMenu')">⚙</div><div id="playersBtn" onclick="openPlayersMenu()">👥</div>
+    <div id="joystick"><div id="joystick-knob"></div></div>
+    
+    <div id="bottomRightUI">
+        <div id="actionBtns"><div id="biteBtn" class="act-btn">УКУС</div><div id="roarBtn" class="act-btn">РЫК</div><div id="restBtn" class="act-btn">ОТДЫХ</div><div id="runBtn" class="act-btn">БЕГ</div></div>
+        <div id="statsContainer"><div class="food-icon"><div class="food-bg"></div><div class="food-fill-wrapper" id="ui-food-wrap"><div class="food-fill"></div></div></div><div class="stat-icon"><div class="paw-bg"></div><div class="paw-fill-wrapper" id="ui-stamina-wrap"><div class="paw-fill"></div></div></div><div class="stat-icon"><div class="water-bg"></div><div class="water-fill-wrapper" id="ui-water-wrap"><div class="water-fill"></div></div></div></div>
+    </div>
+    <div id="interactBtn"></div><div id="friendReqUI"><div class="fr-text" id="frReqText">Имя хочет добавить вас в друзья</div><div class="fr-btns"><button class="fr-btn yes" onclick="acceptFriendReq()">ДА</button><button class="fr-btn no" onclick="rejectFriendReq()">НЕТ</button></div></div>
+
+    <script>
+        let myId = localStorage.getItem('dinoIsleId'); if (!myId) { myId = "dino_" + Date.now() + "_" + Math.floor(Math.random()*10000); localStorage.setItem('dinoIsleId', myId); }
+        const client = mqtt.connect('wss://broker.emqx.io:8084/mqtt', { clean: true, connectTimeout: 5000, keepalive: 30, reconnectPeriod: 1000, clientId: myId });
+
+        function checkBan() {
+            let banTime = localStorage.getItem('dinoIsleBan');
+            if (banTime && Date.now() < parseInt(banTime)) {
+                hideAllUI(); document.getElementById('screen-ban').style.display = 'flex';
+                document.getElementById('banEndDate').innerText = new Date(parseInt(banTime)).toLocaleString();
+                if (gameState === 'game') { gameState = 'banned'; if (gameTopic) { client.publish(gameTopic, JSON.stringify({ type: 'leave', id: myId })); client.unsubscribe(gameTopic); gameTopic = ''; } }
+                return true;
+            }
+            if (banTime && Date.now() >= parseInt(banTime)) localStorage.removeItem('dinoIsleBan');
+            return false;
+        }
+
+        let nameCheckTimeout = null, pendingName = "";
+        function safeJSONParse(k, d) { try { let v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch(e) { return d; } }
+        function safeFloat(k, d) { let v = parseFloat(localStorage.getItem(k)); return isNaN(v) ? d : v; }
+        function getSeededRandom(seed) { return function() { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; } }
+
+        let menuMusic = new Audio('sound.mp3'), gameMusic = new Audio('fon.mp3'); menuMusic.loop = true; menuMusic.volume = 0.5; gameMusic.loop = true; gameMusic.volume = 0.3;
+        function playRoarSound(vol, type = 'velo') { let f = 'roar_velo.mp3'; if(type === 'utah') f = 'utah.mp3'; if(type === 'rex') f = 'trex.mp3'; let r = new Audio(f); r.volume = Math.max(0, Math.min(1, vol)); r.play().catch(()=>{}); }
+        function unlockAudio() { if((gameState === 'menu' || gameState === 'charselect') && menuMusic.paused) menuMusic.play().catch(()=>{}); document.removeEventListener('touchstart', unlockAudio); document.removeEventListener('click', unlockAudio); }
+        document.addEventListener('touchstart', unlockAudio); document.addEventListener('click', unlockAudio);
+
+        let sharedVeloModel=null, sharedVeloAnims=null, sharedUtahModel=null, sharedUtahAnims=null, sharedRexModel=null, sharedRexAnims=null; 
+        let sharedTreeModel=null, sharedNestModel=null, sharedBushModel=null, grassInstanced=null, treePositions=[]; 
+        const texL = new THREE.TextureLoader();
+        let groundTex = texL.load('ground.jpg'); groundTex.wrapS = groundTex.wrapT = THREE.RepeatWrapping; groundTex.repeat.set(100, 100); 
+        let waterTex = texL.load('vater.jpg'); waterTex.wrapS = waterTex.wrapT = THREE.RepeatWrapping; waterTex.repeat.set(30, 30);
+        let grassTex = texL.load('grass.png');
+
+        let loadedCount = 0; const totalAssets = 6; 
+        function checkLoad() { if(++loadedCount >= totalAssets) { const b = document.getElementById('loadBtn'); b.innerText = "ВОЙТИ"; b.disabled = false; b.onclick = finishLogin; let sN = localStorage.getItem('dinoIsleName'); if(sN) { myName = sN; document.getElementById('inputName').value = myName; showMainMenu(); } } else { document.getElementById('loadBtn').innerText = `ЗАГРУЗКА... ${loadedCount}/${totalAssets}`; } }
+        function handleError() { checkLoad(); } setTimeout(() => { if(loadedCount<totalAssets) { loadedCount = totalAssets-1; checkLoad(); } }, 6000);
+
+        const gltfL = new THREE.GLTFLoader();
+        function procMesh(g) { g.scene.traverse((n) => { if (n.isMesh) { n.castShadow = true; n.receiveShadow = false; if(n.material) { let t = n.material.transparent || n.material.alphaTest > 0; n.material = new THREE.MeshLambertMaterial({ map: n.material.map, color: n.material.color, skinning: true, transparent: t, alphaTest: t ? 0.5 : 0, side: n.material.side }); } } }); }
+        gltfL.load('velo.glb', function(g) { sharedVeloModel = g.scene; sharedVeloAnims = g.animations; procMesh(g); checkLoad(); }, undefined, handleError);
+        gltfL.load('utah.glb', function(g) { sharedUtahModel = g.scene; sharedUtahAnims = g.animations; procMesh(g); checkLoad(); }, undefined, handleError);
+        gltfL.load('rex.glb', function(g) { sharedRexModel = g.scene; sharedRexAnims = g.animations; procMesh(g); checkLoad(); }, undefined, handleError);
+        gltfL.load('tree_low-poly.glb', function(g) { sharedTreeModel = g.scene; sharedTreeModel.traverse((n) => { if (n.isMesh) { n.castShadow = false; n.receiveShadow = true; } }); checkLoad(); }, undefined, handleError); 
+        gltfL.load('nest.glb', function(g) { sharedNestModel = g.scene; sharedNestModel.traverse((n) => { if (n.isMesh) { n.castShadow = true; n.receiveShadow = true; if(n.material) { n.material.roughness = 1.0; n.material.metalness = 0.0; } } }); checkLoad(); }, undefined, handleError);
+        gltfL.load('green_bush.glb', function(g) { sharedBushModel = g.scene; sharedBushModel.traverse((n) => { if (n.isMesh) { n.castShadow = false; n.receiveShadow = true; } }); checkLoad(); }, undefined, handleError);
+
+        const DINO_TYPES = ['velo', 'utah', 'rex']; 
+        let myDinoType = localStorage.getItem('dinoIsleType') || 'velo'; if(!DINO_TYPES.includes(myDinoType)) myDinoType = 'velo';
+        let selectedDinoIdx = 0, purchasedDinos = safeJSONParse('dinoIslePurchased', ['velo']);
+        let myName = "", myServer = 1;
+        let myCoins = Number(localStorage.getItem('dinoIsleCoins')) || 0; localStorage.setItem('dinoIsleCoins', myCoins);
+        let myKills = parseInt(localStorage.getItem('dinoIsleKills')) || 0;
+        let _rF = safeJSONParse('dinoIsleFriends', []), myFriends = []; for(let i=0; i<_rF.length; i++) { if(typeof _rF[i] === 'object') myFriends.push(_rF[i].name); else myFriends.push(_rF[i]); } localStorage.setItem('dinoIsleFriends', JSON.stringify(myFriends));
+        let usedPromos = safeJSONParse('dinoIsleUsedPromos', {}); const pCodes = { 'DONAT': { r: 3500, m: 1 }, 'KREEPETKA': { r: 500, m: 2 }, 'ISLAND': { r: 200, m: 1 } };
+        function claimPromo() { let i = document.getElementById('promoInput').value.trim().toUpperCase(); if (!i) return; let p = pCodes[i]; if (!p) return alert('❌ Неверный промокод!'); let u = usedPromos[i] || 0; if (u >= p.m) return alert('❌ Этот промокод уже использован!'); myCoins += p.r; localStorage.setItem('dinoIsleCoins', myCoins); document.getElementById('coinCount').innerText = myCoins; usedPromos[i] = u + 1; localStorage.setItem('dinoIsleUsedPromos', JSON.stringify(usedPromos)); document.getElementById('promoInput').value = ''; alert(`✅ Промокод активирован!\nПолучено: ${p.r} 🪙`); closeModal('promoMenu'); }
+
+        let myGrowth = { velo: safeFloat('dinoIsleGrowth_velo', 0), utah: safeFloat('dinoIsleGrowth_utah', 0), rex: safeFloat('dinoIsleGrowth_rex', 0) }; document.getElementById('coinCount').innerText = myCoins;
+        
+        function getDinoStats(t = myDinoType) {
+            let r = (myGrowth[t] || 0) / 100;
+            if (t === 'rex') return { maxHp: 125 + r * 125, damage: 40 + r * 40, walkSpeed: 0.6 + r * 3.2, runSpeed: 1.2 + r * 5.8, turnSpeed: 0.5 }; 
+            if (t === 'utah') return { maxHp: 37.5 + r * 37.5, damage: 7.5 + r * 7.5, walkSpeed: 2 + r * 2, runSpeed: 7.5 + r * 7.5, turnSpeed: 3.5 }; 
+            return { maxHp: 25 + r * 25, damage: 5 + r * 5, walkSpeed: 1 + r * 1, runSpeed: 4 + r * 4, turnSpeed: 6.0 }; 
+        }
+
+        let myHp = getDinoStats().maxHp, myStamina = 200, myFood = 100, myWater = 100, lastBiteTime = 0, lastRoarTime = 0, myPing = 0;
+        let isResting = false, isEating = false, isDrinking = false, globalPlayers = {};
+        let scene, camera, renderer, myDino, menuDino, players = {}, meats = {}, animFrameId, gameState = 'login', gameTopic = ''; const clock = new THREE.Clock();
+        let targetCamYaw = Math.PI, currentCamYaw = Math.PI, targetCamPitch = 0.4, currentCamPitch = 0.4, moveX = 0, moveZ = 0, isRunning = false; let menuCamLook = new THREE.Vector3(0, 1.2, 0);
+
+        const canvas = document.getElementById('canvas'); renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: "high-performance" }); renderer.setSize(window.innerWidth, window.innerHeight);
+        let curShadows = localStorage.getItem('dinoShadows') || 'off'; renderer.shadowMap.enabled = (curShadows === 'on'); renderer.shadowMap.type = THREE.BasicShadowMap; document.getElementById('shadowSelect').value = curShadows;
+        scene = new THREE.Scene(); camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 1000);
+        let curRes = parseInt(localStorage.getItem('dinoRes') || '45'); let curGrass = localStorage.getItem('dinoGrass') || 'medium'; document.getElementById('resSlider').value = curRes; document.getElementById('resLabel').innerText = curRes + '%'; document.getElementById('grassSelect').value = curGrass;
+
+        function updateResolution(v) { document.getElementById('resLabel').innerText = v + '%'; localStorage.setItem('dinoRes', v); renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5) * (0.3 + (v / 100) * 0.7)); }
+        function updateGrassMode(v) { localStorage.setItem('dinoGrass', v); if(grassInstanced) { grassInstanced.count = (v === 'high') ? 5000 : ((v === 'medium') ? 1500 : 0); } }
+        function updateShadows(v) { localStorage.setItem('dinoShadows', v); renderer.shadowMap.enabled = (v === 'on'); scene.traverse(c => { if(c.isMesh && c.material) c.material.needsUpdate = true; }); }
+
+        function getTerrainHeight(x, z) {
+            let h = Math.sin(x * 0.03)*1.5 + Math.cos(z * 0.03)*1.5 + Math.sin(x * 0.01 + z * 0.015)*2.0 + 2; 
+            let rD = Math.abs(x - (Math.sin(z * 0.015) * 15)); if (rD < 25) h -= Math.pow(25 - rD, 1.2) * 0.15; 
+            let m1 = Math.sqrt((x - 100)**2 + (z - 50)**2), m2 = Math.sqrt((x + 100)**2 + (z + 50)**2);
+            if (m1 < 100) h += Math.pow((100 - m1) * 0.04, 2.5); if (m2 < 100) h += Math.pow((100 - m2) * 0.04, 2.5); 
+            let eD = Math.max(Math.abs(x), Math.abs(z)); if (eD > 280) h += Math.pow(eD - 280, 1.5) * 2; 
+            let n1 = Math.sqrt((x - (-35))**2 + (z - 0)**2); if(n1 < 12.0) { let b = n1 / 12.0; h = (h * b) + (2.5 * (1 - b)); } if(n1 < 5.5) { let r = Math.abs(n1 - 4.0); if(r < 1.5) h += Math.cos((r / 1.5) * (Math.PI / 2)) * 1.8; if(n1 <= 2.5) h = 2.7; }
+            let n2 = Math.sqrt((x - 80)**2 + (z - (-80))**2); if(n2 < 14.0) { let b = n2 / 14.0; h = (h * b) + (2.5 * (1 - b)); } if(n2 < 6.0) { let r = Math.abs(n2 - 4.4); if(r < 1.6) h += Math.cos((r / 1.6) * (Math.PI / 2)) * 2.0; if(n2 <= 2.8) h = 2.7; }
+            let n3 = Math.sqrt((x - (-80))**2 + (z - 80)**2); if(n3 < 14.0) { let b = n3 / 14.0; h = (h * b) + (2.5 * (1 - b)); } if(n3 < 6.0) { let r = Math.abs(n3 - 4.4); if(r < 1.6) h += Math.cos((r / 1.6) * (Math.PI / 2)) * 2.0; if(n3 <= 2.8) h = 2.7; }
+            return h;
+        }
+
+        client.on('connect', () => { client.subscribe('dino-isle-v69/global'); });
+        client.on('message', (topic, m) => {
+            try {
+                let d = JSON.parse(m.toString());
+                if (topic === 'dino-isle-v69/global') {
+                    if (d.type === 'check_name' && d.name === myName && d.reqId !== myId) client.publish('dino-isle-v69/global', JSON.stringify({ type: 'name_taken', name: myName, reqId: d.reqId }));
+                    if (d.type === 'name_taken' && d.reqId === myId && pendingName === d.name) { clearTimeout(nameCheckTimeout); alert("❌ Имя занято!"); document.getElementById('loadBtn').innerText = "ВОЙТИ"; document.getElementById('loadBtn').disabled = false; pendingName = ""; }
+                    if (d.type === 'global_heartbeat' || d.type === 'global_join') { globalPlayers[d.id] = { server: d.server, time: Date.now() }; updateServerCounts(); }
+                    if (d.type === 'global_leave') { delete globalPlayers[d.id]; updateServerCounts(); }
+                    if (d.type === 'ping_req' && d.id === myId) document.getElementById('hudPing').innerText = (Date.now() - d.t) + ' ms';
+                    if (d.type === 'friend_req_global' && d.targetName === myName) { if(myFriends.length >= 5 || myFriends.includes(d.fromName)) return; pendingFriendReq = { name: d.fromName }; document.getElementById('frReqText').innerText = `${d.fromName} хочет добавить вас`; document.getElementById('friendReqUI').style.display = 'flex'; }
+                    if (d.type === 'friend_acc_global' && d.targetName === myName) { addFriendLocal(d.fromName); if(gameState === 'game') addLocalSystemMessage(`${d.fromName} теперь ваш друг!`, '#00ff88'); }
+                    if (d.type === 'friend_rej_global' && d.targetName === myName && gameState === 'game') addLocalSystemMessage(`${d.fromName} отклонил запрос`, '#ff4757');
+                    if (d.type === 'friend_remove_global' && d.targetName === myName) { removeFriendLocal(d.fromName, false); if(gameState === 'game') addLocalSystemMessage(`${d.fromName} удалил вас`, '#ff4757'); }
+                    if (d.type === 'admin_cmd' && d.secret === "DINO_ADMIN_777" && (d.targetId === myId || d.targetId === 'all')) {
+                        if (d.action === 'unban') { localStorage.removeItem('dinoIsleBan'); alert("✅ Администратор разбанил вас!"); location.reload(); }
+                        if (d.action === 'kill') { die(); if(gameState === 'game') addLocalSystemMessage("💀 Вас убил Администратор.", "#ff4757"); }
+                        if (d.action === 'give_coins') { myCoins += Number(d.value); localStorage.setItem('dinoIsleCoins', myCoins); document.getElementById('coinCount').innerText = myCoins; if(gameState === 'game') addLocalSystemMessage(`💰 Админ выдал вам ${d.value} монет!`, "gold"); }
+                        if (d.action === 'give_growth') { myGrowth[myDinoType] = Number(d.value); localStorage.setItem('dinoIsleGrowth_' + myDinoType, myGrowth[myDinoType]); document.getElementById('topGrowthFill').style.width = myGrowth[myDinoType] + '%'; myHp = getDinoStats().maxHp; if(gameState === 'game') addLocalSystemMessage("🌱 Админ вырастил вас до 100%!", "#00ff88"); sendMyPosition(true); }
+                        if (d.action === 'ban') { localStorage.setItem('dinoIsleBan', Date.now() + Number(d.value)); die(); checkBan(); }
+                        if (d.action === 'announce' && gameState === 'game') { addLocalSystemMessage(`📢 АДМИН: ${d.value}`, "#1e90ff"); let a = document.createElement('div'); a.style.cssText = 'position:fixed;top:15%;left:50%;transform:translateX(-50%);background:rgba(200,0,0,0.85);color:#fff;padding:15px 30px;border-radius:5px;z-index:9999;font-weight:bold;font-size:14px;border:2px solid red;text-transform:uppercase;'; a.innerText = "📢 " + d.value; document.body.appendChild(a); setTimeout(() => a.remove(), 7000); }
+                        if (d.action === 'kick') { alert("Вы были кикнуты администратором!"); leaveGame(); }
+                    }
+                }
+                if(topic === gameTopic && d.id !== myId) {
+                    let sId = d.id || d.sourceId; if (sId && d.hp !== undefined && d.hp > 1000) { client.publish(gameTopic, JSON.stringify({ type: 'hit', targetId: sId, sourceId: myId, damage: 99999999 }), {qos: 0}); }
+                    if(d.type === 'chat') { addChatMessage(d.name, d.msg); }
+                    if(d.type === 'requestSync' && myDino) { sendMyPosition(true); }
+                    if(d.type === 'leave' && players[d.id]) { scene.remove(players[d.id].mesh); delete players[d.id]; updateOnlineCount(); }
+                    if(d.type === 'action' && players[d.id]) { 
+                        if(d.action === 'bite') { players[d.id].lastBiteTime = Date.now(); if(players[d.id].mesh.userData.bite) players[d.id].mesh.userData.bite.time = 0; }
+                        if(d.action === 'roar') { players[d.id].lastRoarTime = Date.now(); if(players[d.id].mesh.userData.roar) players[d.id].mesh.userData.roar.time = 0; if(myDino && myDino.position.distanceTo(players[d.id].targetPos) < 80.0) playRoarSound(1.0 - (myDino.position.distanceTo(players[d.id].targetPos) / 80.0), players[d.id].mesh.userData.dinoType || 'velo'); }
+                    }
+                    if(d.type === 'spawn_meat') { let g = new THREE.Group(); let mm = new THREE.Mesh(new THREE.DodecahedronGeometry(1.2, 1), new THREE.MeshStandardMaterial({color: 0x8a1b1b, roughness: 0.8, metalness: 0.1})); mm.scale.set(1.2, 0.5, 0.8); let bm = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 2.5, 8), new THREE.MeshStandardMaterial({color: 0xdddddd, roughness: 0.9})); bm.rotation.z = Math.PI / 2; g.add(bm); g.add(mm); g.position.set(d.x, d.y + 0.4, d.z); scene.add(g); meats[d.meatId] = { mesh: g, time: Date.now(), bites: 3 }; }
+                    if(d.type === 'eat_meat' && meats[d.meatId]) { meats[d.meatId].bites -= 1; meats[d.meatId].mesh.scale.multiplyScalar(0.8); if(meats[d.meatId].bites <= 0) { scene.remove(meats[d.meatId].mesh); delete meats[d.meatId]; } }
+                    if(d.type === 'hit' && d.targetId === myId) { myHp -= d.damage || 10; let s = getDinoStats(); if(myHp <= 0) { client.publish(gameTopic, JSON.stringify({ type: 'killed', killerId: d.sourceId }), {qos: 1}); die(); } else { document.getElementById('topHpFill').style.width = (myHp / s.maxHp * 100) + '%'; sendMyPosition(true); } }
+                    if(d.type === 'killed' && d.killerId === myId) { myKills++; if(myKills > 4) myKills = 4; localStorage.setItem('dinoIsleKills', myKills); updateQuestUI(); }
+                    if(d.type === 'state') {
+                        let t = d.dino || 'velo'; if(!players[d.id] || players[d.id].mesh.userData.dinoType !== t) { if(players[d.id]) scene.remove(players[d.id].mesh); createOtherPlayer(d.id, d.name, t); }
+                        let p = players[d.id]; if (d.anim === 'eat' && p.animState !== 'eat' && p.mesh.userData.eat) p.mesh.userData.eat.time = 0; if (d.anim === 'drink' && p.animState !== 'drink' && p.mesh.userData.drink) p.mesh.userData.drink.time = 0;
+                        p.targetPos.set(d.x, d.y, d.z); p.targetRot = d.rot; p.animState = d.anim; p.lastSeen = Date.now(); p.growth = d.growth !== undefined ? d.growth : 100;
+                        let s = 0.5 + (p.growth / 100) * 0.5; if(t === 'utah') s = 0.6 + (p.growth / 100) * 0.9; if(t === 'rex') s = 0.3 + (p.growth / 100) * 1.5; p.mesh.scale.set(s, s, s);
+                        if(d.hp !== undefined && p.hp !== d.hp) { p.hp = d.hp; p.showHpUntil = Date.now() + 5000; } updateOnlineCount();
+                    }
+                }
+            } catch(e) {}
+        });
+
+        function die() { if(client.connected && myDino) client.publish(gameTopic, JSON.stringify({ type: 'spawn_meat', meatId: myId + '_' + Date.now(), x: myDino.position.x, y: myDino.position.y, z: myDino.position.z }), {qos: 1}); myGrowth[myDinoType] = 0; localStorage.setItem('dinoIsleGrowth_' + myDinoType, 0); let s = getDinoStats(); myHp = s.maxHp; myStamina = 200; myFood = 100; myWater = 100; isResting = false; isEating = false; isDrinking = false; document.getElementById('topHpFill').style.width = '100%'; document.getElementById('topGrowthFill').style.width = '0%'; leaveGame(); }
+        setInterval(() => { if(gameState === 'game' && client.connected) { client.publish('dino-isle-v69/global', JSON.stringify({ type: 'global_heartbeat', id: myId, server: myServer })); client.publish('dino-isle-v69/global', JSON.stringify({ type: 'ping_req', id: myId, t: Date.now() })); } }, 1000);
+        setInterval(() => { const n = Date.now(); let c = false; for(let i in globalPlayers) { if(n - globalPlayers[i].time > 3000) { delete globalPlayers[i]; c = true; } } if(c) updateServerCounts(); }, 1000);
+        setInterval(() => { if(gameState === 'game') localStorage.setItem('dinoIsleGrowth_' + myDinoType, myGrowth[myDinoType].toFixed(2)); }, 1000);
+        function updateServerCounts() { let c = {1:0, 2:0, 3:0, 4:0, 5:0, 6:0}; for(let i in globalPlayers) { if(c[globalPlayers[i].server] !== undefined) c[globalPlayers[i].server]++; } for(let i=1; i<=6; i++) { const e = document.getElementById(`s${i}-count`); if(e) e.innerText = `${c[i]}/20`; } }
+
+        let lastNetX = 0, lastNetZ = 0, lastNetRot = 0, lastNetAnim = '', lastSendTime = 0;
+        function sendMyPosition(f = false) {
+            if(!client.connected || !myDino) return;
+            const wM = Math.sqrt(moveX*moveX + moveZ*moveZ); let iM = wM > 0.05 && !isResting && !isEating && !isDrinking; 
+            let cA = isEating ? 'eat' : (isDrinking ? 'drink' : (isResting ? 'sit' : ((iM && isRunning) ? 'run' : (iM ? 'walk' : 'idle'))));
+            let dS = (myDino.position.x - lastNetX)**2 + (myDino.position.z - lastNetZ)**2; let rD = Math.abs(myDino.rotation.y - lastNetRot); let n = Date.now();
+            if(f || dS > 0.05 || rD > 0.1 || cA !== lastNetAnim || (n - lastSendTime > 1000)) {
+                try { client.publish(gameTopic, JSON.stringify({ type: 'state', id: myId, name: myName, dino: myDinoType, x: myDino.position.x, y: myDino.position.y, z: myDino.position.z, rot: myDino.rotation.y, anim: cA, hp: myHp, growth: parseFloat(myGrowth[myDinoType].toFixed(1)) }), {qos: 0}); lastNetX = myDino.position.x; lastNetZ = myDino.position.z; lastNetRot = myDino.rotation.y; lastNetAnim = cA; lastSendTime = n; } catch(e) {}
+            }
+        }
+        
+        setInterval(() => { if(gameState === 'game') sendMyPosition(); }, 150);
+        setInterval(() => { if(gameState !== 'game') return; const n = Date.now(); for(let i in players) { if(n - players[i].lastSeen > 4000) { scene.remove(players[i].mesh); delete players[i]; updateOnlineCount(); } } }, 1000);
+        window.addEventListener('beforeunload', () => { if (client.connected) client.publish('dino-isle-v69/global', JSON.stringify({ type: 'global_leave', id: myId, server: myServer })); });
+        function updateOnlineCount() { document.getElementById('hudOnline').innerText = Object.keys(players).length + 1; }
+        function sendChat() { const i = document.getElementById('chatInput'); const m = i.value.trim(); if(m.length > 0 && client.connected && gameTopic) { addChatMessage(myName, m); client.publish(gameTopic, JSON.stringify({ type: 'chat', id: myId, name: myName, msg: m }), {qos: 1}); i.value = ''; } }
+        document.getElementById('chatInput').addEventListener('keypress', function(e) { if (e.key === 'Enter') sendChat(); });
+        function addChatMessage(s, m) { const b = document.getElementById('chatMessages'); const d = document.createElement('div'); d.innerHTML = `<span>${s}:</span> ${m}`; b.appendChild(d); b.scrollTop = b.scrollHeight; }
+        function addLocalSystemMessage(m, c) { const b = document.getElementById('chatMessages'); const d = document.createElement('div'); d.innerHTML = `<span style="color:${c}; font-weight:bold;">${m}</span>`; b.appendChild(d); b.scrollTop = b.scrollHeight; }
+
+        document.getElementById('roarBtn').addEventListener('touchstart', (e) => { e.preventDefault(); if(gameState !== 'game' || !myDino || isEating || isDrinking) return; let rD = myDino.userData.roarDuration ? myDino.userData.roarDuration * 1000 : 1500; const n = Date.now(); if(n - lastRoarTime < rD) return; lastRoarTime = n; if(myDino.userData.roar) { myDino.userData.roar.time = 0; myDino.userData.roar.play(); } playRoarSound(1.0, myDinoType); if(client.connected) client.publish(gameTopic, JSON.stringify({ type: 'action', action: 'roar', id: myId }), {qos: 0}); });
+        
+        document.getElementById('biteBtn').addEventListener('touchstart', (e) => { 
+            e.preventDefault(); 
+            if(gameState !== 'game' || !myDino || isResting || isEating || isDrinking) return; 
+            
+            let bD = myDino.userData.biteDuration ? myDino.userData.biteDuration * 1000 : 700; 
+            const n = Date.now(); if(n - lastBiteTime < bD) return; lastBiteTime = n; 
+            if(myDino.userData.bite) { myDino.userData.bite.time = 0; myDino.userData.bite.play(); } 
+            
+            let s = getDinoStats(); 
+            if(client.connected) client.publish(gameTopic, JSON.stringify({ type: 'action', action: 'bite', id: myId }), {qos: 0}); 
+            
+            let mS = 0.5 + (myGrowth['velo'] / 100) * 0.5; 
+            if(myDinoType === 'utah') mS = 0.6 + (myGrowth['utah'] / 100) * 0.9; 
+            if(myDinoType === 'rex') mS = 0.3 + (myGrowth['rex'] / 100) * 1.5; 
+            
+            let atkOffset = myDinoType === 'rex' ? 5.5 : (myDinoType === 'utah' ? 3.0 : 1.5);
+            let atkRadius = myDinoType === 'rex' ? 4.0 : (myDinoType === 'utah' ? 2.0 : 1.0);
+            
+            const fW = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), myDino.rotation.y); 
+            const hP = myDino.position.clone().add(fW.clone().multiplyScalar(atkOffset * mS)); 
+
+            for (let i in players) { 
+                let pType = players[i].mesh.userData.dinoType || 'velo';
+                let pGrowth = players[i].growth || 100;
+                let pScale = 0.5 + (pGrowth / 100) * 0.5;
+                if(pType === 'utah') pScale = 0.6 + (pGrowth / 100) * 0.9;
+                if(pType === 'rex') pScale = 0.3 + (pGrowth / 100) * 1.5;
+
+                let bodyRadius = pType === 'rex' ? 4.5 : (pType === 'utah' ? 2.5 : 1.2);
+
+                if (hP.distanceTo(players[i].targetPos) < (atkRadius * mS) + (bodyRadius * pScale)) { 
+                    if(client.connected) client.publish(gameTopic, JSON.stringify({ type: 'hit', targetId: i, sourceId: myId, damage: s.damage }), {qos: 1}); 
+                    break; 
+                } 
+            } 
+        });
+        
+        document.getElementById('restBtn').addEventListener('touchstart', (e) => { e.preventDefault(); if(isEating || isDrinking) return; isResting = !isResting; isRunning = false; document.getElementById('runBtn').style.background = 'rgba(10,10,10,0.6)'; document.getElementById('runBtn').style.color = '#aaa'; document.getElementById('restBtn').style.background = isResting ? 'rgba(50,150,255,0.8)' : 'rgba(50,150,255,0.4)'; sendMyPosition(true); });
+
+        function sendFriendReq(b, i, n) { if(myFriends.length >= 5) return alert("Достигнут лимит друзей (5)!"); if(myFriends.includes(n)) return alert("Игрок уже в друзьях!"); if(client.connected) { client.publish('dino-isle-v69/global', JSON.stringify({ type: 'friend_req_global', fromName: myName, targetName: n }), {qos: 1}); b.innerText = "ЗАПРОС ОТПРАВЛЕН"; b.disabled = true; } }
+        function acceptFriendReq() { if(pendingFriendReq) { if(myFriends.length >= 5) { alert("Ваш список друзей полон!"); document.getElementById('friendReqUI').style.display = 'none'; pendingFriendReq = null; return; } addFriendLocal(pendingFriendReq.name); if(client.connected) client.publish('dino-isle-v69/global', JSON.stringify({ type: 'friend_acc_global', fromName: myName, targetName: pendingFriendReq.name }), {qos: 1}); document.getElementById('friendReqUI').style.display = 'none'; pendingFriendReq = null; } }
+        function rejectFriendReq() { if(client.connected && pendingFriendReq) client.publish('dino-isle-v69/global', JSON.stringify({ type: 'friend_rej_global', fromName: myName, targetName: pendingFriendReq.name }), {qos: 1}); document.getElementById('friendReqUI').style.display = 'none'; pendingFriendReq = null; }
+        function addFriendLocal(n) { if(myFriends.length < 5 && !myFriends.includes(n)) { myFriends.push(n); localStorage.setItem('dinoIsleFriends', JSON.stringify(myFriends)); for(let i in players) { if (players[i].mesh.userData.playerName === n) { players[i].mesh.userData.spriteMat.map = createLabelTexture(n, (players[i].showHpUntil && Date.now() <= players[i].showHpUntil) ? players[i].hp / getDinoStats(players[i].mesh.userData.dinoType).maxHp : null, true); players[i].mesh.userData.sprite.visible = true; } } if(document.getElementById('friendsMenu').style.display === 'flex') openFriendsMenu(); if(document.getElementById('playersMenu').style.display === 'flex') openPlayersMenu(); } }
+        function removeFriendLocal(n, b = true) { myFriends = myFriends.filter(x => x !== n); localStorage.setItem('dinoIsleFriends', JSON.stringify(myFriends)); for(let i in players) { if (players[i].mesh.userData.playerName === n) { let a = players[i].showHpUntil && Date.now() <= players[i].showHpUntil; players[i].mesh.userData.spriteMat.map = createLabelTexture("", a ? players[i].hp / getDinoStats(players[i].mesh.userData.dinoType).maxHp : null, false); players[i].mesh.userData.sprite.visible = a; } } if(document.getElementById('friendsMenu').style.display === 'flex') openFriendsMenu(); if(document.getElementById('playersMenu').style.display === 'flex') openPlayersMenu(); if(b && client.connected) { client.publish('dino-isle-v69/global', JSON.stringify({ type: 'friend_remove_global', targetName: n, fromName: myName }), {qos: 1}); } }
+
+        function openPlayersMenu() { let h = ''; for(let i in players) { let p = players[i].mesh.userData.playerName; let f = myFriends.includes(p); h += `<div class="plist-item"><span class="plist-name">${p}</span>${f ? '<span style="color:#aaa; font-size:10px;">ДРУГ</span>' : `<button class="plist-btn" onclick="sendFriendReq(this, '${i}', '${p}')">+ ДОБАВИТЬ В ДРУЗЬЯ</button>`}</div>`; } if(h === '') h = 'Нет других игроков.'; document.getElementById('playersListContainer').innerHTML = h; document.getElementById('playersMenu').style.display = 'flex'; }
+        function openFriendsMenu() { document.getElementById('friendCountText').innerText = `${myFriends.length}/5`; let h = ''; myFriends.forEach(n => { h += `<div class="plist-item"><span class="plist-name" style="color:#00ff88;">${n}</span><button class="plist-btn" style="border-color:#ff4757; color:#ff4757;" onclick="removeFriendLocal('${n}', true)">УДАЛИТЬ</button></div>`; }); if(h === '') h = 'У вас пока нет друзей.'; document.getElementById('friendsListContainer').innerHTML = h; document.getElementById('friendsMenu').style.display = 'flex'; }
+        function updateQuestUI() { let p = (myKills / 4) * 100; document.getElementById('questProgress').innerText = `Прогресс: ${myKills}/4 (${p}%)`; document.getElementById('claimBtn').style.display = (myKills >= 4) ? 'block' : 'none'; }
+        function claimReward() { if(myKills >= 4) { myCoins += 200; myKills = 0; localStorage.setItem('dinoIsleCoins', myCoins); localStorage.setItem('dinoIsleKills', myKills); document.getElementById('coinCount').innerText = myCoins; updateQuestUI(); } }
+        function openQuests() { updateQuestUI(); document.getElementById('questsMenu').style.display = 'flex'; }
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; } function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        
+        function finishLogin() { const i = document.getElementById('inputName').value.trim(); if(i.length < 2) return alert("Введите имя!"); pendingName = i; const b = document.getElementById('loadBtn'); b.innerText = "ПРОВЕРКА..."; b.disabled = true; client.publish('dino-isle-v69/global', JSON.stringify({ type: 'check_name', name: pendingName, reqId: myId }), {qos: 1}); nameCheckTimeout = setTimeout(() => { myName = pendingName; localStorage.setItem('dinoIsleName', myName); if(menuMusic.paused) menuMusic.play().catch(()=>{}); showMainMenu(); }, 1000); }
+        function hideAllUI() { document.querySelectorAll('.screen, .modal-screen').forEach(e => e.style.display = 'none'); ['topHpBar','topGrowthBar','hud','chatBox','settingsBtn','playersBtn','joystick','bottomRightUI','interactBtn','friendReqUI','underwaterOverlay','crosshair','screen-ban'].forEach(id => { let e = document.getElementById(id); if (e) e.style.display = 'none'; }); }
+        function showMainMenu() { if (checkBan()) return; gameState = 'menu'; hideAllUI(); document.getElementById('screen-mainmenu').style.display = 'flex'; document.getElementById('menuPlayerName').innerText = myName; updateQuestUI(); initMenuScene(); }
+        function changeName() { hideAllUI(); document.getElementById('screen-login').style.display = 'flex'; document.getElementById('inputName').value = myName; const b = document.getElementById('loadBtn'); b.innerText = "СМЕНИТЬ"; b.disabled = false; }
+        
+        function updateCharSelectUI() {
+            let t = DINO_TYPES[selectedDinoIdx]; let s = getDinoStats(t); let dN = 'ВЕЛОЦИРАПТОР'; if (t === 'utah') dN = 'ЮТАРАПТОР'; if (t === 'rex') dN = 'ТИРАННОЗАВР';
+            document.getElementById('selectDinoName').innerText = dN; document.getElementById('selectGrowthText').innerText = Math.floor(myGrowth[t] || 0) + '%'; 
+            document.getElementById('statHp').innerText = Math.floor(s.maxHp); document.getElementById('statDmg').innerText = Math.floor(s.damage); document.getElementById('statSpd').innerText = Math.floor(s.runSpeed);
+            let b = document.getElementById('selectActionBtn');
+            if (!purchasedDinos.includes(t)) { let c = 0; if (t === 'utah') c = 1200; if (t === 'rex') c = 5000; b.innerText = `КУПИТЬ ${c} 🪙`; b.style.borderColor = 'gold'; b.style.color = 'gold'; } 
+            else { b.innerText = 'ПРОДОЛЖИТЬ'; b.style.borderColor = '#00ff88'; b.style.color = '#00ff88'; }
+            if(menuDino) scene.remove(menuDino); let mS = 1.0; if (t === 'utah') mS = 1.5; if (t === 'rex') mS = 0.3 + ((myGrowth['rex']||0) / 100) * 1.5; 
+            menuDino = setupDinoModel("", false, t); menuDino.scale.set(mS, mS, mS); menuDino.position.set(0, 0, 0); scene.add(menuDino);
+        }
+
+        function handleSelectAction() { if (checkBan()) return; let t = DINO_TYPES[selectedDinoIdx]; if (!purchasedDinos.includes(t)) { let c = 0; if (t === 'utah') c = 1200; if (t === 'rex') c = 5000; if (myCoins >= c) { myCoins -= c; localStorage.setItem('dinoIsleCoins', myCoins); document.getElementById('coinCount').innerText = myCoins; purchasedDinos.push(t); localStorage.setItem('dinoIslePurchased', JSON.stringify(purchasedDinos)); updateCharSelectUI(); } else { alert("❌ Недостаточно монет!"); } } else { myDinoType = t; localStorage.setItem('dinoIsleType', myDinoType); goToServers(); } }
+        function nextDino() { selectedDinoIdx = (selectedDinoIdx + 1) % DINO_TYPES.length; updateCharSelectUI(); }
+        function prevDino() { selectedDinoIdx = (selectedDinoIdx - 1 + DINO_TYPES.length) % DINO_TYPES.length; updateCharSelectUI(); }
+        function playGame() { gameState = 'charselect'; selectedDinoIdx = 0; hideAllUI(); document.getElementById('screen-charselect').style.display = 'flex'; updateCharSelectUI(); }
+        function backToMenuFromSelect() { showMainMenu(); }
+        function goToServers() { if(checkBan()) return; hideAllUI(); document.getElementById('screen-servers').style.display = 'flex'; if(client.connected) client.publish('dino-isle-v69/global', JSON.stringify({ type: 'ping' })); }
+        function backToMenuFromServers() { playGame(); }
+
+        function initMenuScene() {
+            cancelAnimationFrame(animFrameId); while(scene.children.length > 0){ scene.remove(scene.children[0]); }
+            scene.background = new THREE.Color(0x6ca6cd); scene.fog = new THREE.Fog(0x6ca6cd, 2, 25); scene.add(new THREE.AmbientLight(0xffffff, 0.6)); 
+            const sun = new THREE.DirectionalLight(0xffeedd, 1.0); sun.position.set(10, 20, 10); if (curShadows === 'on') { sun.castShadow = true; sun.shadow.mapSize.width = 512; sun.shadow.mapSize.height = 512; } scene.add(sun);
+            const geo = new THREE.PlaneGeometry(30, 30, 5, 5); geo.rotateX(-Math.PI / 2); scene.add(new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: 0x999999, map: groundTex })));
+            let r = getSeededRandom(42); const mG = new THREE.InstancedMesh(new THREE.PlaneGeometry(1.2, 1.2), new THREE.MeshLambertMaterial({ map: grassTex, transparent: true, alphaTest: 0.5, side: THREE.DoubleSide }), 200); const mD = new THREE.Object3D();
+            for(let i=0; i<200; i++) { mD.position.set((r() - 0.5) * 25, 0.6, (r() - 0.5) * 25); mD.rotation.y = r() * Math.PI; mD.updateMatrix(); mG.setMatrixAt(i, mD.matrix); } scene.add(mG);
+            
+            if(sharedTreeModel) { 
+                for(let i=0; i<12; i++) { 
+                    let t = THREE.SkeletonUtils.clone(sharedTreeModel); 
+                    let s = r() * 2.0 + 1.5; t.scale.set(s, s, s); 
+                    let tx = (r()-0.5)*50; let tz = (r()-0.5)*50; 
+                    let dist = Math.sqrt(tx*tx + tz*tz);
+                    if(dist < 25) { 
+                        tx = (tx/dist) * (25 + r()*10);
+                        tz = (tz/dist) * (25 + r()*10);
+                    }
+                    t.position.set(tx, 0, tz); 
+                    t.rotation.y = r() * Math.PI; scene.add(t); 
+                } 
+            }
+            if(sharedVeloModel || sharedUtahModel || sharedRexModel) { menuDino = setupDinoModel("", false, 'velo'); menuDino.scale.set(1.0, 1.0, 1.0); menuDino.position.set(0, 0, 0); scene.add(menuDino); }
+            camera.up.set(0, 1, 0); camera.position.set(2.5, 2.5, -2.5); menuCamLook.set(0, 1.2, 0); camera.lookAt(menuCamLook); clock.getDelta(); animateMenu();
+        }
+
+        function buildGameEnvironment() {
+            scene.background = new THREE.Color(0x6ca6cd); scene.fog = new THREE.FogExp2(0x6ca6cd, 0.004); scene.add(new THREE.AmbientLight(0xffffff, 0.7)); 
+            const sun = new THREE.DirectionalLight(0xffeedd, 1.0); sun.position.set(50, 100, 50); if (curShadows === 'on') { sun.castShadow = true; sun.shadow.mapSize.width = 512; sun.shadow.mapSize.height = 512; sun.shadow.camera.near = 0.5; sun.shadow.camera.far = 300; sun.shadow.camera.left = -60; sun.shadow.camera.right = 60; sun.shadow.camera.top = 60; sun.shadow.camera.bottom = -60; } scene.add(sun);
+            const geo = new THREE.PlaneGeometry(600, 600, 150, 150); geo.rotateX(-Math.PI / 2); const pos = geo.attributes.position.array; 
+            for(let i=0; i<pos.length; i+=3) { let px = pos[i]; let pz = pos[i+2]; let ph = getTerrainHeight(px, pz); if(Math.sqrt((px - (-35))**2 + (pz - 0)**2) < 5.0) ph -= 2.0; if(Math.sqrt((px - 80)**2 + (pz - (-80))**2) < 5.5) ph -= 2.0; if(Math.sqrt((px - (-80))**2 + (pz - 80)**2) < 5.5) ph -= 2.0; pos[i+1] = ph; } 
+            geo.computeVertexNormals(); scene.add(new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: 0x999999, map: groundTex, side: THREE.DoubleSide })));
+            const water = new THREE.Mesh(new THREE.PlaneGeometry(600, 600).rotateX(-Math.PI / 2), new THREE.MeshLambertMaterial({color: 0xffffff, map: waterTex, transparent: true, opacity: 0.85})); water.position.set(0, 0.5, 0); scene.add(water);
+            let r = getSeededRandom(12345);
+
+            if(sharedNestModel) { 
+                let nV = THREE.SkeletonUtils.clone(sharedNestModel); nV.scale.set(9.5, 9.5, 9.5); nV.position.set(-35, 2.5, 0); scene.add(nV); 
+                let nU = THREE.SkeletonUtils.clone(sharedNestModel); nU.scale.set(10.5, 10.5, 10.5); nU.position.set(80, 2.5, -80); scene.add(nU); 
+                let nR = THREE.SkeletonUtils.clone(sharedNestModel); nR.scale.set(13.0, 13.0, 13.0); nR.position.set(-80, 2.5, 80); scene.add(nR);
+            }
+
+            grassInstanced = new THREE.InstancedMesh(new THREE.PlaneGeometry(4, 4), new THREE.MeshLambertMaterial({ map: grassTex, transparent: true, alphaTest: 0.5, side: THREE.DoubleSide }), 8000); const dm = new THREE.Object3D(); let gI = 0, at = 0;
+            while(gI < 8000 && at < 20000) { at++; let gx = (r() - 0.5) * 560; let gz = (r() - 0.5) * 560; let gy = getTerrainHeight(gx, gz); if(gy > 0.8 && gy < 15 && Math.min(Math.sqrt((gx - (-35))**2 + (gz - 0)**2), Math.sqrt((gx - 80)**2 + (gz - (-80))**2), Math.sqrt((gx - (-80))**2 + (gz - 80)**2)) > 6.0) { dm.position.set(gx, gy + 1.5, gz); dm.rotation.y = r() * Math.PI; dm.updateMatrix(); grassInstanced.setMatrixAt(gI++, dm.matrix); } }
+            scene.add(grassInstanced); updateGrassMode(document.getElementById('grassSelect').value);
+
+            treePositions = []; if(sharedTreeModel) { for(let i=0; i<250; i++) { let tx = (r() - 0.5) * 560; let tz = (r() - 0.5) * 560; let ty = getTerrainHeight(tx, tz); if(ty > 1.2 && ty < 12 && Math.min(Math.sqrt((tx - (-35))**2 + (tz - 0)**2), Math.sqrt((tx - 80)**2 + (tz - (-80))**2), Math.sqrt((tx - (-80))**2 + (tz - 80)**2)) > 6.0) { let tr = THREE.SkeletonUtils.clone(sharedTreeModel); let ts = r() * 1.5 + 1.2; tr.scale.set(ts, ts, ts); tr.position.set(tx, ty, tz); tr.rotation.y = r() * Math.PI; scene.add(tr); treePositions.push({x: tx, z: tz, r: 1.0}); } } }
+            if(sharedBushModel) { for(let i=0; i<180; i++) { let bx, bz; if(r() < 0.7 && treePositions.length > 0) { let t = treePositions[Math.floor(r() * treePositions.length)]; let a = r() * Math.PI * 2; let ra = 2 + r() * 4; bx = t.x + Math.cos(a) * ra; bz = t.z + Math.sin(a) * ra; } else { bx = (r() - 0.5) * 560; bz = (r() - 0.5) * 560; } let by = getTerrainHeight(bx, bz); if(by > 1.2 && by < 15 && Math.min(Math.sqrt((bx - (-35))**2 + (bz - 0)**2), Math.sqrt((bx - 80)**2 + (bz - (-80))**2), Math.sqrt((bx - (-80))**2 + (bz - 80)**2)) > 6.0) { let bs = THREE.SkeletonUtils.clone(sharedBushModel); let bss = (r() < 0.3) ? (r() * 2.0 + 2.5) : (r() * 1.5 + 0.8); bs.scale.set(bss, bss, bss); bs.position.set(bx, by, bz); bs.rotation.y = r() * Math.PI; scene.add(bs); } } }
+        }
+
+        async function joinServer(id) {
+            if (checkBan()) return; 
+            gameState = 'game'; myServer = id; gameTopic = 'dino-isle-v69/server/' + myServer;
+            let s = getDinoStats(); myHp = s.maxHp; myStamina = 200; myFood = 100; myWater = 100; isResting = false; isEating = false; isDrinking = false;
+            targetCamYaw = Math.PI; currentCamYaw = Math.PI; targetCamPitch = 0.4; currentCamPitch = 0.4; 
+            client.subscribe(gameTopic, () => { client.publish(gameTopic, JSON.stringify({type: 'requestSync', id: myId})); client.publish('dino-isle-v69/global', JSON.stringify({ type: 'global_join', id: myId, server: myServer })); });
+            try { await document.documentElement.requestFullscreen(); screen.orientation.lock('landscape').catch(()=>{}); } catch(e){}
+            hideAllUI(); ['topHpBar','topGrowthBar','hud','chatBox','settingsBtn','playersBtn','joystick','bottomRightUI'].forEach(id => { let e = document.getElementById(id); if(e) e.style.display = (id==='bottomRightUI'||id==='settingsBtn'||id==='playersBtn')?'flex':'block'; });
+            document.getElementById('hudName').innerText = myName; document.getElementById('hudServer').innerText = myServer; document.getElementById('chatMessages').innerHTML = ''; document.getElementById('topHpFill').style.width = '100%'; document.getElementById('topGrowthFill').style.width = (myGrowth[myDinoType]||0) + '%';
+            menuMusic.pause(); gameMusic.play().catch(()=>{}); initGameScene();
+        }
+
+        function initGameScene() {
+            cancelAnimationFrame(animFrameId); while(scene.children.length > 0){ scene.remove(scene.children[0]); }
+            players = {}; meats = {}; buildGameEnvironment();
+            if(sharedVeloModel || sharedUtahModel || sharedRexModel) {
+                myDino = setupDinoModel(myName, false, myDinoType); 
+                let ms = 0.5 + ((myGrowth['velo']||0) / 100) * 0.5; if (myDinoType === 'utah') ms = 0.6 + ((myGrowth['utah']||0) / 100) * 0.9; if (myDinoType === 'rex') ms = 0.3 + ((myGrowth['rex']||0) / 100) * 1.5; 
+                myDino.scale.set(ms, ms, ms);
+                let sx = -35, sz = 0; if (myDinoType === 'utah') { sx = 80; sz = -80; } if (myDinoType === 'rex') { sx = -80; sz = 80; }
+                myDino.position.set(sx, getTerrainHeight(sx, sz), sz); scene.add(myDino); 
+            }
+            clock.getDelta(); startGameLoop();
+        }
+
+        function createLabelTexture(n, hpR, iF = false) {
+            const cv = document.createElement('canvas'); const ctx = cv.getContext('2d'); cv.width = 512; cv.height = 256; ctx.clearRect(0,0, cv.width, cv.height);
+            if (n) { ctx.font = 'bold 50px Arial'; ctx.fillStyle = iF ? '#00ff88' : '#fff'; ctx.textAlign = 'center'; ctx.lineWidth = 6; ctx.strokeStyle = 'black'; ctx.lineJoin = 'round'; ctx.strokeText(n, 256, 100); ctx.fillText(n, 256, 100); }
+            if (hpR !== null && hpR !== undefined) { const bW = 300, bH = 25, bX = 256 - bW / 2, bY = 130; ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillRect(bX, bY, bW, bH); ctx.fillStyle = hpR > 0.5 ? '#00ff88' : (hpR > 0.2 ? 'yellow' : 'red'); ctx.fillRect(bX, bY, bW * hpR, bH); ctx.strokeStyle = '#000'; ctx.lineWidth = 4; ctx.strokeRect(bX, bY, bW, bH); }
+            let t = new THREE.CanvasTexture(cv); t.needsUpdate = true; return t;
+        }
+
+        function setupDinoModel(nText, iF = false, t = 'velo') {
+            const gr = new THREE.Group(); let mc = sharedVeloModel; if (t === 'utah') mc = sharedUtahModel; if (t === 'rex') mc = sharedRexModel;
+            if(!mc) return gr; 
+            const m = THREE.SkeletonUtils.clone(mc); m.rotation.y = 0; m.position.y = 0; 
+            if (t === 'utah') { m.scale.set(0.6592, 0.6592, 0.6592); } else if (t === 'rex') { m.scale.set(0.8, 0.8, 0.8); } else { m.scale.set(0.0206, 0.0206, 0.0206); } 
+            gr.add(m); const mx = new THREE.AnimationMixer(m); let ac = {}; 
+            let ans = sharedVeloAnims; if (t === 'utah') ans = sharedUtahAnims; if (t === 'rex') ans = sharedRexAnims;
+
+            if (ans) {
+                ans.forEach(c => { 
+                    let a = mx.clipAction(c); let n = c.name;
+                    if(t === 'velo') {
+                        if (n.includes('AS_Velo_Idle_V2')) ac.idle = a; if (n.includes('AS_Velo_WalkF')) ac.walk = a; if (n.includes('AS_Velo_RunF')) ac.run = a; if (n.includes('AS_Velo_Sit_Idle')) ac.sit = a;
+                        if (n.includes('AS_Velo_Eat_V2')) { ac.eat = a; ac.eatDuration = c.duration; } if (n.includes('AS_Velo_Drink_V2')) { ac.drink = a; ac.drinkDuration = c.duration; }
+                        if (n.includes('AS_Velo_Emote_Danger')) { THREE.AnimationUtils.makeClipAdditive(c); ac.roar = mx.clipAction(c); ac.roar.blendMode = THREE.AdditiveAnimationBlendMode; ac.roarDuration = c.duration; }
+                        if (n.includes('AS_Velo_Bite')) { THREE.AnimationUtils.makeClipAdditive(c); ac.bite = mx.clipAction(c); ac.bite.blendMode = THREE.AdditiveAnimationBlendMode; ac.biteDuration = c.duration; }
+                    } else if(t === 'utah') {
+                        if (n.includes('AS_Utah_Idle_V3')) ac.idle = a; 
+                        if (n.includes('AS_Utah_Run_MoveF')) { ac.run = a; let wc = c.clone(); wc.name = "Walk"; ac.walk = mx.clipAction(wc); ac.walk.timeScale = 0.35; }
+                        if (n.includes('AS_Utah_Sit_Idle_V2')) ac.sit = a;
+                        if (n.includes('UtahEat')) { ac.eat = a; ac.eatDuration = c.duration; } if (n.includes('UtahDrink')) { ac.drink = a; ac.drinkDuration = c.duration; }
+                        if (n.includes('UtahCall')) { THREE.AnimationUtils.makeClipAdditive(c); ac.roar = mx.clipAction(c); ac.roar.blendMode = THREE.AdditiveAnimationBlendMode; ac.roarDuration = c.duration; }
+                        if (n.includes('AS_Utah_Bite_V2')) { THREE.AnimationUtils.makeClipAdditive(c); ac.bite = mx.clipAction(c); ac.bite.blendMode = THREE.AdditiveAnimationBlendMode; ac.biteDuration = c.duration; }
+                    } else if (t === 'rex') {
+                        let nLow = n.toLowerCase();
+                        
+                        if (n === 'SK_RexAdult_New.ao|AS_RexAdult_Idle_V2') ac.idle = a;
+                        else if (n === 'SK_RexAdult_New.ao|RexAdultWalk') ac.walk = a;
+                        else if (n === 'SK_RexAdult_New.ao|RexAdultTrot') ac.run = a;
+                        else if (n.includes('Sit_Idle') || n.includes('Rest_Idle')) ac.sit = a;
+                        else if (n.includes('AS_RexAdult_Emote_Threaten_V4')) { 
+                            THREE.AnimationUtils.makeClipAdditive(c); 
+                            ac.roar = mx.clipAction(c); 
+                            ac.roar.blendMode = THREE.AdditiveAnimationBlendMode; 
+                            ac.roarDuration = c.duration; 
+                        }
+                        else if (n.includes('AS_RexAdult_Eat_V3')) {
+                            ac.eat = a; ac.eatDuration = c.duration;
+                        }
+
+                        if (!ac.idle && nLow.includes('idle') && !nLow.includes('sit') && !nLow.includes('rest')) ac.idle = a;
+                        if (!ac.walk && nLow.includes('walk')) ac.walk = a;
+                        if (!ac.run && (nLow.includes('trot') || nLow.includes('run')) && !nLow.includes('turn')) ac.run = a;
+                        if (!ac.roar && (nLow.includes('threaten') || nLow.includes('danger') || nLow.includes('roar') || nLow.includes('call'))) {
+                            THREE.AnimationUtils.makeClipAdditive(c); 
+                            ac.roar = mx.clipAction(c); 
+                            ac.roar.blendMode = THREE.AdditiveAnimationBlendMode; 
+                            ac.roarDuration = c.duration;
+                        }
+
+                        if (!ac.eat && nLow.includes('eat')) { ac.eat = a; ac.eatDuration = c.duration; }
+                        if (nLow.includes('drink')) { ac.drink = a; ac.drinkDuration = c.duration; }
+                        if (nLow.includes('bite') || nLow.includes('attack')) { 
+                            THREE.AnimationUtils.makeClipAdditive(c); 
+                            ac.bite = mx.clipAction(c); 
+                            ac.bite.blendMode = THREE.AdditiveAnimationBlendMode; 
+                            ac.biteDuration = c.duration; 
+                        }
+                    }
+                }); Object.values(ac).forEach(a => { if(a && a.play) { a.play(); a.weight = 0; } }); if(ac.idle) ac.idle.weight = 1;
+            }
+            gr.userData = { mixer: mx, ...ac, playerName: nText, dinoType: t };
+            if(nText && nText !== myName) { const sM = new THREE.SpriteMaterial({ map: createLabelTexture(iF ? nText : "", null, iF), depthTest: false }); const sp = new THREE.Sprite(sM); sp.scale.set(5, 2.5, 1); let sy = 3.0; if (t === 'utah') sy = 4.5; if (t === 'rex') sy = 5.5; sp.position.y = sy; sp.visible = iF; gr.add(sp); gr.userData.spriteMat = sM; gr.userData.sprite = sp; }
+            return gr;
+        }
+
+        function createOtherPlayer(id, n, t = 'velo') { const m = setupDinoModel(n, myFriends.includes(n), t); scene.add(m); players[id] = { mesh: m, targetPos: new THREE.Vector3(), targetRot: 0, lastSeen: Date.now(), animState: 'idle', hp: 50, showHpUntil: 0, lastBiteTime: 0, lastRoarTime: 0, growth: 100 }; }
+
+        const joy = document.getElementById('joystick'), knob = document.getElementById('joystick-knob'); let joyId = null, camId = null; let lTX = 0, lTY = 0;
+        joy.addEventListener('touchstart', e => { e.preventDefault(); joyId = e.changedTouches[0].identifier; });
+        document.addEventListener('touchstart', e => { for(let t of e.changedTouches) { if(t.target.tagName !== 'BUTTON' && !t.target.closest('#bottomRightUI') && !t.target.closest('#chatBox') && !t.target.closest('#joystick') && !t.target.closest('.modal-screen') && !t.target.closest('#friendReqUI')) { camId = t.identifier; lTX = t.clientX; lTY = t.clientY; } } });
+        document.addEventListener('touchmove', e => {
+            for(let t of e.changedTouches) {
+                if(t.identifier === joyId) { const r = joy.getBoundingClientRect(); const dx = (t.clientX - (r.left + r.width/2)) / (r.width/2); const dy = (t.clientY - (r.top + r.height/2)) / (r.height/2); const d = Math.min(1, Math.sqrt(dx*dx + dy*dy)); moveX = (dx / (Math.sqrt(dx*dx + dy*dy) || 1)) * d; moveZ = (dy / (Math.sqrt(dx*dx + dy*dy) || 1)) * d; knob.style.transform = `translate(-50%, -50%) translate(${moveX*35}px, ${moveZ*35}px)`; }
+                if(t.identifier === camId) { targetCamYaw -= (t.clientX - lTX) * 0.005; targetCamPitch += (t.clientY - lTY) * 0.005; if(targetCamPitch < 0.1) targetCamPitch = 0.1; if(targetCamPitch > 1.4) targetCamPitch = 1.4; lTX = t.clientX; lTY = t.clientY; }
+            }
+        });
+        document.addEventListener('touchend', e => { for(let t of e.changedTouches) { if(t.identifier === joyId) { joyId = null; moveX = 0; moveZ = 0; knob.style.transform = 'translate(-50%, -50%)'; } if(t.identifier === camId) { camId = null; } } });
+
+        const runBtn = document.getElementById('runBtn'); runBtn.addEventListener('touchstart', e => { e.preventDefault(); if(isResting || isEating || isDrinking) return; isRunning = !isRunning; runBtn.style.background = isRunning ? 'rgba(255,255,255,0.4)' : 'rgba(10,10,10,0.6)'; runBtn.style.color = isRunning ? '#fff' : '#aaa'; });
+        function toggleFullscreen() { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); }
+        function leaveGame() { if(client.connected) { client.publish('dino-isle-v69/global', JSON.stringify({ type: 'global_leave', id: myId, server: myServer })); if(gameTopic) { client.publish(gameTopic, JSON.stringify({ type: 'leave', id: myId })); client.unsubscribe(gameTopic); gameTopic = ''; } } gameMusic.pause(); menuMusic.play().catch(()=>{}); closeModal('settingsMenu'); showMainMenu(); }
+        function lerpAngle(a, b, t) { let d = b - a; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2; return a + d * t; }
+
+        function animateMenu() {
+            if(gameState !== 'menu' && gameState !== 'charselect') return; animFrameId = requestAnimationFrame(animateMenu); const dl = Math.min(clock.getDelta(), 0.1);
+            let tP, tL; 
+            if (gameState === 'charselect') { 
+                if (menuDino) menuDino.rotation.y = Math.PI / 6; 
+                if (DINO_TYPES[selectedDinoIdx] === 'utah') { 
+                    tP = new THREE.Vector3(0.0, 2.5, 5.0); tL = new THREE.Vector3(2.0, 1.5, 0.0); 
+                } else if (DINO_TYPES[selectedDinoIdx] === 'rex') { 
+                    tP = new THREE.Vector3(0.0, 6.5, 14.0); tL = new THREE.Vector3(3.0, 3.5, 0.0); 
+                } else { 
+                    tP = new THREE.Vector3(0.0, 1.5, 3.0); tL = new THREE.Vector3(1.0, 1.0, 0.0); 
+                } 
+            } else { 
+                if (menuDino) menuDino.rotation.y = Math.PI + 0.5;
+                tP = new THREE.Vector3(2.8, 1.6, -1.2); tL = new THREE.Vector3(-0.5, 1.0, 0); 
+            }
+            camera.position.lerp(tP, 5 * dl); menuCamLook.lerp(tL, 5 * dl); camera.lookAt(menuCamLook);
+            if(menuDino) { if(menuDino.userData.mixer) menuDino.userData.mixer.update(dl); } renderer.render(scene, camera);
+        }
+
+        function startGameLoop() {
+            if(gameState !== 'game') return; animFrameId = requestAnimationFrame(startGameLoop); if(!myDino) return;
+            const dl = Math.min(clock.getDelta(), 0.1); const n = Date.now(); 
+            
+            let oS = getDinoStats(); if (isNaN(myHp)) myHp = oS.maxHp; let pG = oS.maxHp;
+            let mT = 300; if (myDinoType === 'utah') mT = 420; if (myDinoType === 'rex') mT = 1500; 
+
+            if(myGrowth[myDinoType] < 100) { myGrowth[myDinoType] += (100 / mT) * dl; if(myGrowth[myDinoType] > 100) myGrowth[myDinoType] = 100; document.getElementById('topGrowthFill').style.width = myGrowth[myDinoType] + '%'; }
+            let nS = getDinoStats(); myHp += (nS.maxHp - pG); if (myHp > nS.maxHp) myHp = nS.maxHp;
+
+            let mSc = 0.5 + ((myGrowth['velo']||0) / 100) * 0.5; if (myDinoType === 'utah') mSc = 0.6 + ((myGrowth['utah']||0) / 100) * 0.9; if (myDinoType === 'rex') mSc = 0.3 + ((myGrowth['rex']||0) / 100) * 1.5; 
+            myDino.scale.set(mSc, mSc, mSc);
+
+            if(waterTex) { waterTex.offset.x -= 0.05 * dl; waterTex.offset.y -= 0.02 * dl; }
+
+            const wM = Math.sqrt(moveX*moveX + moveZ*moveZ); let iM = wM > 0.05 && !isResting && !isEating && !isDrinking; 
+            if (iM && isRunning) { myStamina -= 15 * dl; if (myStamina <= 0) { myStamina = 0; isRunning = false; runBtn.style.background = 'rgba(10,10,10,0.6)'; runBtn.style.color = '#aaa'; } } else { myStamina += (isResting ? 30 : 10) * dl; if (myStamina > 200) myStamina = 200; }
+            myFood -= 0.2 * dl; myWater -= 0.4 * dl; if (myFood <= 0) { myFood = 0; myHp -= 1 * dl; } if (myWater <= 0) { myWater = 0; myHp -= 2 * dl; } if (myHp <= 0) { die(); return; }
+            if(isResting && myHp < nS.maxHp && myFood > 20 && myWater > 20) { myHp += 2 * dl; if(myHp > nS.maxHp) myHp = nS.maxHp; }
+
+            document.getElementById('topHpFill').style.width = (myHp / nS.maxHp * 100) + '%';
+            document.getElementById('ui-stamina-wrap').style.height = `${myStamina / 2}%`; document.getElementById('ui-food-wrap').style.height = `${myFood}%`; document.getElementById('ui-water-wrap').style.height = `${myWater}%`;
+
+            let iB = document.getElementById('interactBtn');
+            let cD = myDino.position.y <= 0.52 && (Math.sqrt((myDino.position.x - (-35))**2 + (myDino.position.z - 0)**2) >= 8 && Math.sqrt((myDino.position.x - 80)**2 + (myDino.position.z - (-80))**2) >= 8 && Math.sqrt((myDino.position.x - (-80))**2 + (myDino.position.z - 80)**2) >= 8);
+            let mE = null; for(let i in meats) { if(n - meats[i].time > 30000) { scene.remove(meats[i].mesh); delete meats[i]; continue; } if(myDino.position.distanceTo(meats[i].mesh.position) < 4.0 * mSc) { mE = i; break; } }
+
+            if(mE && !isEating && !isDrinking && !isResting) { iB.style.display = 'flex'; iB.innerHTML = '🍖'; iB.ontouchstart = (e) => { e.preventDefault(); isEating = true; isRunning = false; if(myDino.userData.eat) myDino.userData.eat.time = 0; sendMyPosition(true); client.publish(gameTopic, JSON.stringify({ type: 'eat_meat', meatId: mE }), {qos: 1}); setTimeout(() => { isEating = false; myFood = Math.min(100, myFood + 35); }, myDino.userData.eatDuration ? myDino.userData.eatDuration * 1000 : 2500); }; } 
+            else if (cD && !isEating && !isDrinking && !isResting) { iB.style.display = 'flex'; iB.innerHTML = '💧'; iB.ontouchstart = (e) => { e.preventDefault(); isDrinking = true; isRunning = false; if(myDino.userData.drink) myDino.userData.drink.time = 0; sendMyPosition(true); setTimeout(() => { isDrinking = false; myWater = 100; }, myDino.userData.drinkDuration ? myDino.userData.drinkDuration * 1000 : 2500); }; } 
+            else { iB.style.display = 'none'; iB.ontouchstart = null; }
+
+            const sp = isRunning ? nS.runSpeed : nS.walkSpeed; const cL = 1 - Math.exp(-15 * dl); currentCamYaw += (targetCamYaw - currentCamYaw) * cL; currentCamPitch += (targetCamPitch - currentCamPitch) * cL;
+            
+            if(iM) {
+                const inputDir = new THREE.Vector3(moveX, 0, moveZ).applyAxisAngle(new THREE.Vector3(0,1,0), currentCamYaw);
+                myDino.rotation.y = lerpAngle(myDino.rotation.y, Math.atan2(inputDir.x, inputDir.z), 1 - Math.exp(-nS.turnSpeed * dl)); 
+                let fwdX = Math.sin(myDino.rotation.y); let fwdZ = Math.cos(myDino.rotation.y);
+                let nx = myDino.position.x + fwdX * sp * dl; let nz = myDino.position.z + fwdZ * sp * dl;
+                
+                let ht = false; for(let t of treePositions) { if (Math.hypot(nx - t.x, nz - t.z) < t.r) { ht = true; break; } }
+                if(!ht) { myDino.position.x = nx; myDino.position.z = nz; }
+            }
+
+            if(myDino.position.x > 295) myDino.position.x = 295; if(myDino.position.x < -295) myDino.position.x = -295; if(myDino.position.z > 295) myDino.position.z = 295; if(myDino.position.z < -295) myDino.position.z = -295;
+            myDino.position.y = getTerrainHeight(myDino.position.x, myDino.position.z); 
+
+            if(myDino.userData.mixer) {
+                myDino.userData.mixer.update(dl); const aL = 1 - Math.exp(-15 * dl); const u = myDino.userData;
+                if(u.run) u.run.weight += (((iM && isRunning && !isEating && !isDrinking && !isResting) ? 1 : 0) - u.run.weight) * aL;
+                if(u.walk) u.walk.weight += (((iM && !isRunning && !isEating && !isDrinking && !isResting) ? 1 : 0) - u.walk.weight) * aL;
+                if(u.sit) u.sit.weight += ((isResting ? 1 : 0) - u.sit.weight) * aL;
+                if(u.eat) u.eat.weight += ((isEating ? 1 : 0) - u.eat.weight) * aL;
+                if(u.drink) u.drink.weight += ((isDrinking ? 1 : 0) - u.drink.weight) * aL;
+                if(u.idle) u.idle.weight += (((!iM && !isResting && !isEating && !isDrinking) ? 1 : 0) - u.idle.weight) * aL;
+                if(u.bite) u.bite.weight += ((((n - lastBiteTime) < (u.biteDuration ? u.biteDuration * 1000 : 700)) ? 1 : 0) - u.bite.weight) * aL;
+                
+                let isRoarActive = ((n - lastRoarTime) < (u.roarDuration ? u.roarDuration * 1000 : 1500));
+                let targetRoarWt = isRoarActive ? (isResting ? (myDinoType === 'rex' ? 0.7 : 1.0) : 1.0) : 0;
+                if(u.roar) u.roar.weight += (targetRoarWt - u.roar.weight) * aL;
+            }
+
+            let cR, cY, lY;
+            if (myDinoType === 'velo') {
+                cR = 6.0 * mSc; cY = 1.6 * mSc; lY = 1.6 * mSc;
+            } else if (myDinoType === 'utah') {
+                cR = 5.8 * mSc; cY = 1.6 * mSc; lY = 1.6 * mSc;
+            } else { 
+                cR = 9.0 * mSc; cY = 2.5 * mSc; lY = 2.5 * mSc;
+            }
+            
+            camera.position.set(myDino.position.x + cR * Math.sin(currentCamYaw) * Math.cos(currentCamPitch), myDino.position.y + cR * Math.sin(currentCamPitch) + cY, myDino.position.z + cR * Math.cos(currentCamYaw) * Math.cos(currentCamPitch)); 
+            camera.lookAt(myDino.position.x, myDino.position.y + lY, myDino.position.z);
+            document.getElementById('underwaterOverlay').style.display = (camera.position.y <= 0.5 && Math.sqrt((camera.position.x - (-35))**2 + (camera.position.z - 0)**2) >= 10 && Math.sqrt((camera.position.x - 80)**2 + (camera.position.z - (-80))**2) >= 10 && Math.sqrt((camera.position.x - (-80))**2 + (camera.position.z - 80)**2) >= 10) ? 'block' : 'none'; 
+
+            const pL = 1 - Math.exp(-20 * dl); 
+            for(let i in players) {
+                const p = players[i]; let iHA = p.showHpUntil && n <= p.showHpUntil;
+                if (p.mesh.userData.sprite) { if (myFriends.includes(p.mesh.userData.playerName)) { p.mesh.userData.sprite.visible = true; if (p.showHpUntil && n > p.showHpUntil) { p.showHpUntil = 0; p.mesh.userData.spriteMat.map = createLabelTexture(p.mesh.userData.playerName, null, true); } } else { p.mesh.userData.sprite.visible = iHA; } }
+                p.mesh.position.y = getTerrainHeight(p.mesh.position.x, p.mesh.position.z);
+                if (p.mesh.position.distanceTo(p.targetPos) > 5) { p.mesh.position.x = p.targetPos.x; p.mesh.position.z = p.targetPos.z; } else { 
+                    let netDirX = p.targetPos.x - p.mesh.position.x; let netDirZ = p.targetPos.z - p.mesh.position.z;
+                    p.mesh.position.x += netDirX * pL; p.mesh.position.z += netDirZ * pL; 
+                }
+                p.mesh.rotation.y = lerpAngle(p.mesh.rotation.y, p.targetRot, pL);
+                if(p.mesh.userData.mixer) {
+                    p.mesh.userData.mixer.update(dl); const aL = 1 - Math.exp(-15 * dl); const a = p.animState; const u = p.mesh.userData;
+                    if(u.run) u.run.weight += ((a === 'run' ? 1 : 0) - u.run.weight) * aL; if(u.walk) u.walk.weight += ((a === 'walk' ? 1 : 0) - u.walk.weight) * aL;
+                    if(u.sit) u.sit.weight += ((a === 'sit' ? 1 : 0) - u.sit.weight) * aL; if(u.eat) u.eat.weight += ((a === 'eat' ? 1 : 0) - u.eat.weight) * aL;
+                    if(u.drink) u.drink.weight += ((a === 'drink' ? 1 : 0) - u.drink.weight) * aL; if(u.idle) u.idle.weight += (((a === 'idle' || !a) ? 1 : 0) - u.idle.weight) * aL;
+                    if(u.bite) u.bite.weight += ((((n - (p.lastBiteTime || 0)) < (u.biteDuration ? u.biteDuration * 1000 : 700)) ? 1 : 0) - u.bite.weight) * aL;
+                    
+                    let isNetRoaring = ((n - (p.lastRoarTime || 0)) < (u.roarDuration ? u.roarDuration * 1000 : 1500));
+                    let targetNetRoarWt = isNetRoaring ? (a === 'sit' ? (p.mesh.userData.dinoType === 'rex' ? 0.7 : 1.0) : 1.0) : 0;
+                    if(u.roar) u.roar.weight += (targetNetRoarWt - u.roar.weight) * aL;
+                }
+            }
+            renderer.render(scene, camera);
+        }
+
+        document.getElementById('resSlider').addEventListener('input', e => updateResolution(e.target.value)); document.getElementById('grassSelect').addEventListener('change', e => updateGrassMode(e.target.value)); document.getElementById('shadowSelect').addEventListener('change', e => updateShadows(e.target.value));
+        window.addEventListener('resize', () => { if(camera && renderer) { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); } });
+    </script>
+</body>
+</html>
